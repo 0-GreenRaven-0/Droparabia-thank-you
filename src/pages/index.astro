@@ -5,6 +5,14 @@ import '../styles/global.css';
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <!-- Google tag (gtag.js) -->
+    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-PMPGRD7YHS"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-PMPGRD7YHS');
+    </script>
     <link rel="icon" href="/Droparabia.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
@@ -185,7 +193,8 @@ import '../styles/global.css';
     });
   });
 
-  import Plyr from 'plyr';
+  // @ts-ignore
+  import Plyr from 'plyr/dist/plyr.mjs';
   new Plyr('#player', {
     controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
     hideControls: true,
