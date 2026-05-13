@@ -53,9 +53,13 @@ import '../styles/global.css';
           Step 1: <span class="hl">Watch this video</span>
         </h2>
         <div class="video-wrap">
-          <video id="player" playsinline controls>
-            <source src="/vsl.mp4" type="video/mp4" />
-          </video>
+          <iframe
+            src="https://www.youtube.com/embed/hh5GMS3jHZI"
+            title="Droparabia VSL"
+
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+          ></iframe>
         </div>
       </div>
     </section>
@@ -204,10 +208,4 @@ import '../styles/global.css';
     });
   });
 
-  import Plyr from 'plyr';
-  new Plyr('#player', {
-    controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
-    hideControls: true,
-    resetOnEnd: false,
-  });
 </script>
