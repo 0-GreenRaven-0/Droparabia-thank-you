@@ -79,7 +79,7 @@ import '../styles/global.css';
               <svg class="faq-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
             </summary>
             <p class="faq-body">
-             Droparabia's main purpose allows you to start your dropshipping or ecommerce business with a tiny budget of $500 minimum without wasting your money on bulk inventories that might not sell, renting warehouses or paying for shipment and import fees.
+             Droparabia's main purpose allows you to start your dropshipping or ecommerce business with a tiny budget of less than 1k without wasting your money on bulk inventories that might not sell, renting warehouses or paying for shipment and import fees.
             </p>
           </details>
 
@@ -121,7 +121,7 @@ import '../styles/global.css';
               <svg class="faq-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
             </summary>
             <p class="faq-body">
-              It all depends on how much time and effort you're willing to invest into your own business (even if you fail at first). You're getting the same tools, guides and support as our +500 lebanese users. Some are making 1k per month, some $700 in 2 weeks. How much you give to your business is how much you get.
+              It all depends on how much time and effort you're willing to invest into your own business (even if you fail at first). You're getting the same tools, guides and support as our +800 lebanese users. Some are making 1k per month, some $700 in 2 weeks, others $500 in a week and even users making 300$ a day! How much you give to your business is how much you get.
             </p>
           </details>
 
@@ -180,6 +180,55 @@ import '../styles/global.css';
       </div>
     </section>
 
+
+    <!-- ══════════════════════════════════════════════
+         PROOF — SELLERS WHO ALREADY STARTED
+    ══════════════════════════════════════════════ -->
+    <section class="proof-section">
+      <div class="page-wrap">
+        <h2 class="proof-headline"><span class="hl">800+ Lebanese sellers</span> already started</h2>
+        <p class="proof-sub">They were exactly where you are now, with no inventory and no clear path. Here are a few of them.</p>
+
+        <!-- The hexagons themselves are painted by three.js on the canvas behind this, the
+             same way droparabia-official's HexBackground does it: one rounded-hex
+             ShapeGeometry, a metallic gradient baked into its vertex colors, instanced under
+             an orthographic camera mapped 1:1 to CSS pixels. CSS still owns the layout — the
+             script just measures each cell and drops a hexagon behind it — so the text stays
+             real text, selectable and readable by a screen reader.
+
+             Each cell also carries a flat clip-path hexagon of its own, which is what shows
+             if WebGL is unavailable; it's dropped the moment the canvas has actually drawn. -->
+        <div class="hex-stage" id="hex-stage">
+          <canvas class="hex-canvas" id="hex-canvas" aria-hidden="true"></canvas>
+
+          <ul class="hex-row">
+            <li class="hex-cell">
+              <p class="proof-name">John Carl</p>
+              <p class="proof-result">$11.1K in sales<br />in 2 months</p>
+            </li>
+            <li class="hex-cell">
+              <p class="proof-name">Mohamad</p>
+              <p class="proof-result">$10K in sales<br />in 3 months</p>
+            </li>
+            <li class="hex-cell">
+              <p class="proof-name">Karim</p>
+              <p class="proof-result">$8.6K in sales<br />in 3 months</p>
+            </li>
+          </ul>
+
+          <ul class="hex-row hex-row--nested">
+            <li class="hex-cell">
+              <p class="proof-name">Mahdi</p>
+              <p class="proof-result">$1K in one day<br />$7K in one month</p>
+            </li>
+            <li class="hex-cell">
+              <p class="proof-name">Julian</p>
+              <p class="proof-result">$3K+ in one month<br />during the war</p>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
   </body>
 </html>
 
@@ -208,4 +257,172 @@ import '../styles/global.css';
     });
   });
 
+
+  // ── Metallic hexagons behind the results ──────────────────────────────────
+  // Ported from droparabia-official's HexBackground, and kept deliberately faithful to it:
+  // the same rounded-hexagon ShapeGeometry, the same two-stop grey baked into its vertex
+  // colours, the same MeshBasicMaterial and InstancedMesh under an orthographic camera so
+  // one world unit is one CSS pixel. Changing the ramp here would make these read as a
+  // different material from every other hexagon in the brand.
+  //
+  // Nothing animates, so there's no requestAnimationFrame loop: it renders once, and again
+  // only when the layout actually moves.
+  const GRADIENT_STOPS: [number, string][] = [
+    [0.41, '#d0d0d0'],
+    [0.6, '#c0c0c0'],
+  ];
+
+  function hexToRGB(hex: string): [number, number, number] {
+    const n = parseInt(hex.slice(1), 16);
+    return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+  }
+
+  function gradientColor(t: number): [number, number, number] {
+    const clamped = Math.min(1, Math.max(0, t));
+    const [t0, c0] = GRADIENT_STOPS[0];
+    const [t1, c1] = GRADIENT_STOPS[1];
+    if (clamped <= t0) return hexToRGB(c0);
+    if (clamped >= t1) return hexToRGB(c1);
+    const localT = (clamped - t0) / (t1 - t0);
+    const [r0, g0, b0] = hexToRGB(c0);
+    const [r1, g1, b1] = hexToRGB(c1);
+    return [r0 + (r1 - r0) * localT, g0 + (g1 - g0) * localT, b0 + (b1 - b0) * localT];
+  }
+
+  async function paintHexes() {
+    const stage = document.getElementById('hex-stage');
+    const canvas = document.getElementById('hex-canvas') as HTMLCanvasElement | null;
+    if (!stage || !canvas) return;
+    const cells = Array.from(stage.querySelectorAll<HTMLElement>('.hex-cell'));
+    if (!cells.length) return;
+
+    const THREE = await import('three');
+
+    // Built once at unit size (circumradius 1, pointy-top like the rest of the brand's
+    // hexagons) and scaled per instance, so one geometry serves every hexagon here. Each
+    // corner is trimmed back along both its edges and the two points rejoined with a
+    // quadratic through the original corner — the same rounding used site-wide and the same
+    // 0.98 inset, but at a softer ratio than the background grid's 0.16: these are five
+    // hexagons carrying text, not a wall of tiling texture, so the corners are rounded far
+    // enough to read as deliberate. The cap is half an edge, which is 0.5 here.
+    const CORNER_RADIUS = 0.26;
+    const corners: [number, number][] = Array.from({ length: 6 }, (_, i) => {
+      const angle = (Math.PI / 180) * (60 * i - 30);
+      return [0.98 * Math.cos(angle), 0.98 * Math.sin(angle)];
+    });
+    const lerp = (a: [number, number], b: [number, number], t: number): [number, number] => [
+      a[0] + (b[0] - a[0]) * t,
+      a[1] + (b[1] - a[1]) * t,
+    ];
+    const shape = new THREE.Shape();
+    for (let i = 0; i < 6; i++) {
+      const curr = corners[i];
+      const prev = corners[(i + 5) % 6];
+      const next = corners[(i + 1) % 6];
+      const distPrev = Math.hypot(curr[0] - prev[0], curr[1] - prev[1]);
+      const distNext = Math.hypot(next[0] - curr[0], next[1] - curr[1]);
+      const approach = lerp(curr, prev, Math.min(CORNER_RADIUS / distPrev, 0.5));
+      const leave = lerp(curr, next, Math.min(CORNER_RADIUS / distNext, 0.5));
+      if (i === 0) shape.moveTo(approach[0], approach[1]);
+      else shape.lineTo(approach[0], approach[1]);
+      shape.quadraticCurveTo(curr[0], curr[1], leave[0], leave[1]);
+    }
+    shape.closePath();
+
+    // The gradient runs corner to corner across each hexagon's own face, so every hexagon
+    // carries the identical sheen rather than sharing one gradient across the whole row.
+    const geometry = new THREE.ShapeGeometry(shape);
+    geometry.computeBoundingBox();
+    const bbox = geometry.boundingBox!;
+    const bboxW = bbox.max.x - bbox.min.x;
+    const bboxH = bbox.max.y - bbox.min.y;
+    const pos = geometry.attributes.position;
+    const colors = new Float32Array(pos.count * 3);
+    for (let v = 0; v < pos.count; v++) {
+      const nx = (pos.getX(v) - bbox.min.x) / bboxW;
+      const nyFromTop = (bbox.max.y - pos.getY(v)) / bboxH;
+      const [r, g, b] = gradientColor((nx + nyFromTop) / 2);
+      colors[v * 3] = r;
+      colors[v * 3 + 1] = g;
+      colors[v * 3 + 2] = b;
+    }
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    let renderer: InstanceType<typeof THREE.WebGLRenderer>;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    } catch {
+      // No WebGL — the clip-path hexagons already in the markup stay as they are.
+      return;
+    }
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    // The grey is already baked into the vertices; material.color is just a tint
+    // multiplier on top of it, and white leaves it alone.
+    const material = new THREE.MeshBasicMaterial({ vertexColors: true, color: 0xffffff });
+    const mesh = new THREE.InstancedMesh(geometry, material, cells.length);
+
+    const scene = new THREE.Scene();
+    scene.add(mesh);
+    const camera = new THREE.OrthographicCamera(0, 0, 0, 0, 0.1, 100);
+    camera.position.set(0, 0, 50);
+
+    const dummy = new THREE.Object3D();
+
+    // Layout is CSS's job: this reads back where the cells actually ended up and puts a
+    // hexagon behind each one, which keeps the two in step through font swaps, resizes and
+    // the mobile reflow without duplicating any of the layout maths here.
+    function layout() {
+      const stageRect = stage!.getBoundingClientRect();
+      if (!stageRect.width || !stageRect.height) return;
+
+      renderer.setSize(stageRect.width, stageRect.height, false);
+      camera.left = -stageRect.width / 2;
+      camera.right = stageRect.width / 2;
+      camera.top = stageRect.height / 2;
+      camera.bottom = -stageRect.height / 2;
+      camera.updateProjectionMatrix();
+
+      cells.forEach((cell, i) => {
+        const rect = cell.getBoundingClientRect();
+        // A pointy-top hexagon is two circumradii tall, so its height sets the scale.
+        dummy.position.set(
+          rect.left + rect.width / 2 - (stageRect.left + stageRect.width / 2),
+          -(rect.top + rect.height / 2 - (stageRect.top + stageRect.height / 2)),
+          0,
+        );
+        dummy.scale.setScalar(rect.height / 2);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+      });
+      mesh.instanceMatrix.needsUpdate = true;
+
+      renderer.render(scene, camera);
+      stage!.classList.add('is-painted');
+    }
+
+    layout();
+    window.addEventListener('resize', layout);
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => layout()).observe(stage);
+  }
+
+  // three.js is ~130 KiB and this section sits well below the fold, under the video and ten
+  // FAQ entries — so it's fetched only once the honeycomb is near the viewport rather than
+  // competing with the first paint of a page most visitors read from the top.
+  const stageEl = document.getElementById('hex-stage');
+  if (stageEl) {
+    if (typeof IntersectionObserver === 'undefined') {
+      paintHexes();
+    } else {
+      const io = new IntersectionObserver(
+        (entries) => {
+          if (!entries.some((entry) => entry.isIntersecting)) return;
+          io.disconnect();
+          paintHexes();
+        },
+        { rootMargin: '400px' },
+      );
+      io.observe(stageEl);
+    }
+  }
 </script>

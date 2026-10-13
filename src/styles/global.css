@@ -281,6 +281,103 @@ body {
   padding-top: 1rem;
 }
 
+
+/* ════════════════════════════════════════════════════════
+   PROOF — SELLERS WHO ALREADY STARTED
+════════════════════════════════════════════════════════ */
+.proof-section {
+  padding: 0 0 3.5rem;
+  text-align: center;
+}
+
+.proof-headline {
+  font-family: 'ibrand', sans-serif;
+  font-size: clamp(2rem, 5.5vw, 3.2rem);
+  line-height: 1.1;
+  margin-bottom: 0.6rem;
+}
+
+.proof-sub {
+  font-size: 1rem;
+  color: var(--text-muted);
+  max-width: 480px;
+  margin: 0 auto 1.75rem;
+  line-height: 1.6;
+}
+
+/* ── Honeycomb of metallic hexagons ──────────────────── */
+.hex-stage {
+  position: relative;
+  /* Pointy-top hexagon: width / height = √3 / 2. Width shrinks to keep three across
+     inside the wrapper rather than overflowing it on a narrow laptop. */
+  --hex-gap: 0.15rem;
+  --hex-w: min(13.5rem, calc((100vw - 4.5rem - 2 * var(--hex-gap)) / 3));
+  --hex-h: calc(var(--hex-w) / 0.8660254);
+}
+
+.hex-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* position: relative only so the rows paint above the absolutely-positioned canvas. */
+.hex-row {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  gap: var(--hex-gap);
+  list-style: none;
+}
+
+/* Pulls the second row up into the notches of the first, the way a honeycomb packs:
+   rows sit three quarters of a hexagon's height apart. */
+.hex-row--nested {
+  margin-top: calc(var(--hex-h) * -0.25 + var(--hex-gap) * 0.75);
+}
+
+.hex-cell {
+  position: relative;
+  width: var(--hex-w);
+  height: var(--hex-h);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* The hexagon's sides only run straight between a quarter and three quarters of its
+     height, so the text block is kept inside that band. */
+  padding: 0 calc(var(--hex-w) * 0.13);
+  text-align: center;
+  background: linear-gradient(135deg, #d0d0d0 0%, #d0d0d0 41%, #c0c0c0 60%, #c0c0c0 100%);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+/* Once three.js has drawn, its hexagons are the ones on screen and the flat CSS
+   fallback underneath would only double up on them. */
+.hex-stage.is-painted .hex-cell {
+  background: none;
+  clip-path: none;
+}
+
+.proof-name {
+  font-family: 'ibrand', sans-serif;
+  font-size: calc(var(--hex-w) * 0.105);
+  line-height: 1.15;
+  color: var(--text);
+}
+
+.proof-result {
+  margin-top: 0.3rem;
+  font-size: max(0.7rem, calc(var(--hex-w) * 0.065));
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  color: var(--blue-start);
+}
+
 /* ── Mobile ──────────────────────────────────────────── */
 @media (max-width: 480px) {
   .page-wrap {
@@ -308,5 +405,29 @@ body {
 
   .plyr--video {
     border-radius: 1rem;
+  }
+
+  /* Three hexagons across never leaves enough room for the figures on a phone, so the row
+     of three wraps and the honeycomb becomes 2-1-2 instead. A negative row-gap would be the
+     obvious way to nest the wrapped lines, but CSS won't take one — so the cells carry the
+     nesting on margin-bottom, and the stage takes that height back as padding so the bottom
+     row still lands inside the canvas. */
+  .hex-stage {
+    --hex-w: min(10rem, calc((100vw - 3rem - var(--hex-gap)) / 2));
+    padding-bottom: calc(var(--hex-h) * 0.25 - var(--hex-gap) * 0.75);
+  }
+
+  .hex-row {
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+
+  .hex-cell {
+    margin-bottom: calc(var(--hex-h) * -0.25 + var(--hex-gap) * 0.75);
+  }
+
+  /* The wrapped lines already space themselves, so the second row just continues them. */
+  .hex-row--nested {
+    margin-top: 0;
   }
 }
